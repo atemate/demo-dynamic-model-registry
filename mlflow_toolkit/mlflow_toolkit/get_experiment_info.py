@@ -6,13 +6,14 @@ import mlflow
 
 logging.basicConfig
 log = logging.getLogger(__file__)
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 
 
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "experiment_names",
+        "-ee",
+        "--experiment_names",
         type=str,
         nargs="+",
         help="Experiments to put to the dataframe",
@@ -28,7 +29,7 @@ def get_args() -> argparse.Namespace:
 def main(args=None):
     # Process arguments
     args = args or get_args()
-    experiments = args.experiments
+    experiment_names = args.experiment_names
     format, output = args.format, args.output
 
     if output.is_file():
@@ -36,8 +37,8 @@ def main(args=None):
     output.parent.mkdir(parents=True, exist_ok=True)
 
     # Prepare objects for experiments and pipelines
-    log.info(f"Loading runs info on experiments: {experiments}")
-    df = mlflow.search_runs(experiment_names=experiments, output_format="pandas")
+    log.info(f"Loading runs info on experiments: {experiment_names}")
+    df = mlflow.search_runs(experiment_names=experiment_names, output_format="pandas")
     df = df.drop(columns=[c for c in df.columns if c.startswith("tags.")])
 
     if format == "json":

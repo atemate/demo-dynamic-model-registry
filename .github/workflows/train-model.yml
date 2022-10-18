@@ -64,7 +64,7 @@ jobs:
 
       - name: Train model
         env:
-          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_URI:      ${{ secrets.MLFLOW_TRACKING_URI }}
           MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
           # silence mlflow deprecation warnings as DagsHub's MLflow
@@ -88,8 +88,6 @@ jobs:
           run_name=$(cat mlflow_run.json        | jq -r '.info.run_name')
           run_id=$(cat mlflow_run.json          | jq -r '.info.run_id')
 
-          python -m mlflow_toolkit.get_experiment_info $experiment_id -f md --output experiment_info.md
-
           python -m mlflow_toolkit.get_model_info $run_id -f json --output model_info.json
           model_name=$(cat model_info.json    | jq -r '.name')
           model_version=$(cat model_info.json | jq -r '.version')
@@ -103,7 +101,3 @@ jobs:
           echo "- Experiment: [$experiment_name]($experiment_link)" >> $GITHUB_STEP_SUMMARY
           echo "- Run: [$run_name]($run_link)" >> $GITHUB_STEP_SUMMARY
           echo "- Model: [$model_name, Version $model_version]($model_link) " >> $GITHUB_STEP_SUMMARY
-
-          echo "#### Experiment results:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          cat experiment_info.md >> $GITHUB_STEP_SUMMARY
