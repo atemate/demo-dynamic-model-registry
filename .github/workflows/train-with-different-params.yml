@@ -1,4 +1,4 @@
-name: "CI/CD with MLflow"
+name: "Train model with different hyperparameters"
 
 on:
   pull_request:
