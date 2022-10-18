@@ -4,7 +4,9 @@ import logging
 from pathlib import Path
 from .utils import _get_or_create_mlflow_experiment_id
 import mlflow
-from typing import List
+
+from .constants import MODEL_NAME
+
 logging.basicConfig
 log = logging.getLogger(__file__)
 log.setLevel(logging.INFO)
@@ -20,6 +22,11 @@ def evaluate(
 
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
         log.info(f"Loading models by tags: {model_tags}")
+
+        client = mlflow.MlflowClient()
+        models = [client.get_model_version(MODEL_NAME, t) for t in model_tags]
+
+
         
 
         # Log model
@@ -44,12 +51,7 @@ def evaluate(
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--experiment_name", required=True)
-    parser.add_argument("-r", "--run_name")
-    parser.add_argument("--learning_rate", type=float, default=0.01)
-    parser.add_argument("--max_depth", type=int, default=5)
-    parser.add_argument("--n_estimators", type=int, default=10)
-    parser.add_argument("--output_mlflow_json_file", type=Path)
+    parser.add_argument("-tt", "--model_tags", type=int, required=True)
     return parser.parse_args()
 
 

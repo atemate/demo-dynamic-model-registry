@@ -22,7 +22,7 @@ env:
   max_depth:        ${{ inputs.max_depth     || 10 }}
   n_estimators:     ${{ inputs.n_estimators  || 5 }}
   # mlflow:
-  MLFLOW_TRACKING_URI:      ${{ secrets.MLFLOW_TRACKING_URI }}
+  MLFLOW_TRACKING_URI:      https://dagshub.com/atemate/mlflow-with-gh-actions.mlflow
   MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
   MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
   PYTHONWARNINGS: ignore # silence MLflow deprecation warnings as DagsHub doesn't support 'mlflow.search_experiments()'
@@ -103,4 +103,5 @@ jobs:
 
           echo '```json' >> $GITHUB_STEP_SUMMARY
           cat model_info.json >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
