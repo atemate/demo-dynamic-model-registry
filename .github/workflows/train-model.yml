@@ -58,16 +58,16 @@ jobs:
           
       - name: Generate summary
         run: |
-          tracking_uri=$(cat mlflow_run.json | jq -r '.info.tracking_uri')
+          tracking_uri=$(cat mlflow_run.json    | jq -r '.info.tracking_uri')
           experiment_name=$(cat mlflow_run.json | jq -r '.info.experiment_name')
-          experiment_id=$(cat mlflow_run.json | jq -r '.info.experiment_id')
-          run_name=$(cat mlflow_run.json | jq -r '.info.run_name')
-          run_id=$(cat mlflow_run.json | jq -r '.info.run_id')
+          experiment_id=$(cat mlflow_run.json   | jq -r '.info.experiment_id')
+          run_name=$(cat mlflow_run.json        | jq -r '.info.run_name')
+          run_id=$(cat mlflow_run.json          | jq -r '.info.run_id')
 
           python -m mlflow_toolkit.get_experiment_info $experiment_id -f md > experiment_info.md
 
           python -m mlflow_toolkit.get_model_info $run_id -f json > model_info.json
-          model_name=$(cat model_info.json | jq -r '.name')
+          model_name=$(cat model_info.json    | jq -r '.name')
           model_version=$(cat model_info.json | jq -r '.version')
 
           experiment_link="${tracking_uri}/#/experiments/${experiment_id}"

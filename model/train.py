@@ -48,7 +48,7 @@ class MockModel:
         pass
 
 
-def _get_or_create_mlflow_experiment_id(exp_name: str, use_legacy_api=False) -> str:
+def _get_or_create_mlflow_experiment_id(exp_name: str, use_legacy_api=True) -> str:
     if use_legacy_api:
         exps = [e for e in mlflow.list_experiments() if e.name == exp_name]
     else:
