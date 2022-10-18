@@ -101,3 +101,7 @@ jobs:
           echo "- Experiment: [$experiment_name]($experiment_link)" >> $GITHUB_STEP_SUMMARY
           echo "- Run: [$run_name]($run_link)" >> $GITHUB_STEP_SUMMARY
           echo "- Model: [$model_name, Version $model_version]($model_link) " >> $GITHUB_STEP_SUMMARY
+
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat model_info.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
