@@ -7,7 +7,7 @@ REQUIREMENTS = REQUIREMENTS_TXT.read_text().splitlines()
 
 
 setup(
-    name="model_package",
+    name="model",
     version="0.0.1",
     packages=find_packages(),
     install_requires=REQUIREMENTS,

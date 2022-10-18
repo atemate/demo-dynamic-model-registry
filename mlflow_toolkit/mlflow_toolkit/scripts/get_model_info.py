@@ -1,7 +1,8 @@
 import argparse
+import json
 import logging
 from pathlib import Path
-import json
+
 import mlflow
 import pandas as pd
 
@@ -19,9 +20,7 @@ def get_args() -> argparse.Namespace:
         help="Run ID to get associated model from",
     )
 
-    parser.add_argument(
-        "-f", "--format", choices=["json", "md"], default="json"
-    )
+    parser.add_argument("-f", "--format", choices=["json", "md"], default="json")
     parser.add_argument("-o", "--output", type=Path, required=True, help="Output file")
     return parser.parse_args()
 
@@ -51,7 +50,6 @@ def main(args=None):
         **{f"metric.{k}": v for k, v in run.data.metrics.items()},
         **{f"param.{k}": v for k, v in run.data.params.items()},
     }
-    
 
     if format == "json":
         s = json.dumps(info, indent=4)

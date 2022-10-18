@@ -1,23 +1,15 @@
 import argparse
 import json
 import logging
-import math
 from pathlib import Path
 
 import mlflow
-from .utils import _get_or_create_mlflow_experiment_id
+
+from .utils import _get_or_create_mlflow_experiment_id, sigmoid
 
 logging.basicConfig
 log = logging.getLogger(__file__)
 log.setLevel(logging.INFO)
-
-
-MODEL_NAME = "my-model"
-
-
-def sigmoid(x):
-    y = 1 / (1 + math.exp(-x))
-    return float(f"{y:.3f}")
 
 
 class MockModel:
@@ -46,12 +38,15 @@ class MockModel:
         mlflow.log_metric("f1", f1)
 
     def predict(self, *args, **kwargs):
-        pass
+        # return mock value
+        return sigmoid(self.learning_rate + self.max_depth + self.n_estimators)
+
 
 def train(
     *,
     experiment_name: str,
     run_name: str = None,
+    model_name: str,
     model_params: dict,
     output_mlflow_json_file: Path = None,
 ):
@@ -65,7 +60,7 @@ def train(
 
         # Log model
         mlflow.sklearn.log_model(
-            model, artifact_path="model", registered_model_name=MODEL_NAME
+            model, artifact_path="model", registered_model_name=model_name
         )
 
         # Log mlflow run info
@@ -87,6 +82,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--experiment_name", required=True)
     parser.add_argument("-r", "--run_name")
+    parser.add_argument("-m", "--model_name", required=True)
     parser.add_argument("--learning_rate", type=float, default=0.01)
     parser.add_argument("--max_depth", type=int, default=5)
     parser.add_argument("--n_estimators", type=int, default=10)
@@ -106,6 +102,7 @@ if __name__ == "__main__":
     train(
         experiment_name=args.experiment_name,
         run_name=args.run_name,
+        model_name=args.model_name,
         model_params=model_params,
         output_mlflow_json_file=args.output_mlflow_json_file,
     )

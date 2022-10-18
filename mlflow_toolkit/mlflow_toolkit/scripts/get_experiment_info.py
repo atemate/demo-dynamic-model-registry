@@ -19,9 +19,7 @@ def get_args() -> argparse.Namespace:
         help="Experiments to put to the dataframe",
     )
 
-    parser.add_argument(
-        "-f", "--format", choices=["json", "md"], default="json"
-    )
+    parser.add_argument("-f", "--format", choices=["json", "md"], default="json")
     parser.add_argument("-o", "--output", type=Path, required=True, help="Output file")
     return parser.parse_args()
 
