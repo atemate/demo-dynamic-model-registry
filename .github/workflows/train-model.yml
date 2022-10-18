@@ -34,10 +34,12 @@ jobs:
           python-version: 3.9
           cache: pip
       
-      - name: Install model dependencies
-        run: pip install -r model/requirements.txt
+      - name: Install dependencies
+        run: |
+          pip install -e mlflow_toolkit
+          pip install -r model/requirements.txt
 
-      - name: Train model with different parameters
+      - name: Train model
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
           MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
@@ -51,4 +53,33 @@ jobs:
             --run_name="lr-${learning_rate}-md-${max_depth}-ne-${n_estimators}" \
             --learning_rate=${learning_rate} \
             --max_depth=${max_depth} \
-            --n_estimators=${n_estimators}
+            --n_estimators=${n_estimators} \
+            --output_mlflow_json_file=mlflow_run.json
+          
+      - name: Generate summary
+        run: |
+          tracking_uri=$(cat mlflow_run.json | jq -r '.info.tracking_uri')
+          experiment_name=$(cat mlflow_run.json | jq -r '.info.experiment_name')
+          experiment_id=$(cat mlflow_run.json | jq -r '.info.experiment_id')
+          run_name=$(cat mlflow_run.json | jq -r '.info.run_name')
+          run_id=$(cat mlflow_run.json | jq -r '.info.run_id')
+
+          python -m mlflow_toolkit.get_experiment_info $experiment_id -f md > experiment_info.md
+
+          python -m mlflow_toolkit.get_model_info $run_id -f json > model_info.json
+          model_name=$(cat model_info.json | jq -r '.name')
+          model_version=$(cat model_info.json | jq -r '.version')
+
+          experiment_link="${tracking_uri}/#/experiments/${experiment_id}"
+          run_link="${tracking_uri}/#/experiments/${experiment_id}/runs/${run_id}"
+          model_link="${tracking_uri}/#/models/${model_name}/versions/${model_version}"
+
+          # Generate summary
+          echo "### Training completed! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "- Experiment: [$experiment_name]($experiment_link)" >> $GITHUB_STEP_SUMMARY
+          echo "- Run: [$run_name]($run_link)" >> $GITHUB_STEP_SUMMARY
+          echo "- Model: [$model_name, Version $model_version]($model_link) " >> $GITHUB_STEP_SUMMARY
+
+          echo "#### Experiment results:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat experiment_info.md >> $GITHUB_STEP_SUMMARY
