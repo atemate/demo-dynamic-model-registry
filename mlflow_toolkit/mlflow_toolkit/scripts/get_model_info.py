@@ -6,7 +6,7 @@ from pathlib import Path
 import mlflow
 import pandas as pd
 
-log = logging.getLogger(__name__)
+log = logging.getLogger()
 
 
 def get_args() -> argparse.Namespace:

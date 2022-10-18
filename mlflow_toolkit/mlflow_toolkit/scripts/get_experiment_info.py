@@ -4,7 +4,7 @@ from pathlib import Path
 
 import mlflow
 
-log = logging.getLogger(__name__)
+log = logging.getLogger()
 
 
 def get_args() -> argparse.Namespace:
@@ -16,7 +16,6 @@ def get_args() -> argparse.Namespace:
         nargs="+",
         help="Experiments to put to the dataframe",
     )
-
     parser.add_argument("-f", "--format", choices=["json", "md"], default="json")
     parser.add_argument("-o", "--output", type=Path, required=True, help="Output file")
     return parser.parse_args()

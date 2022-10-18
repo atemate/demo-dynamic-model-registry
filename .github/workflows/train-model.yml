@@ -81,7 +81,7 @@ jobs:
 
       - name: Evaluate model
         run: |
-          run_id=$(jq -r '.run_id' mlflow_train.json)
+          run_id=$(cat mlflow_train.json | jq -r '.run_id')
           python -m model.evaluate \
             --experiment_name=${experiment_prefix}-eval \
             --run_id=${run_id} \
@@ -90,18 +90,18 @@ jobs:
       - name: Generate summary
         run: |
           cat mlflow_train.json  # debug
-          tracking_uri=$(mlflow_train.json    | jq -r '.tracking_uri')
-          experiment_prefix=$(mlflow_train.json | jq -r '.experiment_prefix')
-          experiment_id=$(mlflow_train.json   | jq -r '.experiment_id')
-          run_name=$(mlflow_train.json        | jq -r '.run_name')
-          run_id=$(mlflow_train.json          | jq -r '.run_id')
+          tracking_uri=$(      cat mlflow_train.json | jq -r '.tracking_uri')
+          experiment_prefix=$( cat mlflow_train.json | jq -r '.experiment_prefix')
+          experiment_id=$(     cat mlflow_train.json | jq -r '.experiment_id')
+          run_name=$(          cat mlflow_train.json | jq -r '.run_name')
+          run_id=$(            cat mlflow_train.json | jq -r '.run_id')
 
-          eval_experiment_name=$(cat mlflow_eval.json | jq -r '.experiment_prefix')
-          eval_experiment_id=$(cat mlflow_eval.json   | jq -r '.experiment_id')
+          eval_experiment_name=$( cat mlflow_eval.json | jq -r '.experiment_prefix')
+          eval_experiment_id=$(   cat mlflow_eval.json | jq -r '.experiment_id')
 
           python -m mlflow_toolkit.scripts.get_model_info -r $run_id -f json --output model_info.json
-          model_name=$(cat model_info.json    | jq -r '.name')
-          model_version=$(cat model_info.json | jq -r '.version')
+          model_name=$(    cat model_info.json | jq -r '.name')
+          model_version=$( cat model_info.json | jq -r '.version')
 
           experiment_link="${tracking_uri}/#/experiments/${experiment_id}"
           run_link="${tracking_uri}/#/experiments/${experiment_id}/runs/${run_id}"

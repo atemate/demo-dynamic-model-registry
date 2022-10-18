@@ -5,7 +5,7 @@ from pathlib import Path
 
 import mlflow
 
-log = logging.getLogger(__name__)
+log = logging.getLogger()
 
 
 def get_or_create_mlflow_experiment_id(exp_name: str, use_legacy_api=True) -> str:

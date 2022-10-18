@@ -11,7 +11,7 @@ from .utils import (
     sigmoid,
 )
 
-log = logging.getLogger(__name__)
+log = logging.getLogger()
 
 
 def evaluate(

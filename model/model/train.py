@@ -6,7 +6,7 @@ import mlflow
 
 from .utils import dump_mlflow_info, get_or_create_mlflow_experiment_id, sigmoid
 
-log = logging.getLogger(__name__)
+log = logging.getLogger()
 
 
 class MockModel:
