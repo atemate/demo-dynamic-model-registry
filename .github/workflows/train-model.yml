@@ -80,13 +80,14 @@ jobs:
 
       - name: Generate summary
         run: |
+          cat mlflow_run.json  # debug
           tracking_uri=$(cat mlflow_run.json    | jq -r '.tracking_uri')
           experiment_name=$(cat mlflow_run.json | jq -r '.experiment_name')
           experiment_id=$(cat mlflow_run.json   | jq -r '.experiment_id')
           run_name=$(cat mlflow_run.json        | jq -r '.run_name')
           run_id=$(cat mlflow_run.json          | jq -r '.run_id')
 
-          python -m mlflow_toolkit.get_model_info -r $run_id -f json --output model_info.json
+          python -m mlflow_toolkit.scripts.get_model_info -r $run_id -f json --output model_info.json
           model_name=$(cat model_info.json    | jq -r '.name')
           model_version=$(cat model_info.json | jq -r '.version')
 
