@@ -84,7 +84,7 @@ jobs:
       - name: Evaluate model
         run: |
           run_id=$(cat mlflow_train.json | jq -r '.run_id')
-          python -m mlflow_toolkit.scripts.get_model_info -r $run_id -f json --output model_info.json
+          python -m mlflow_toolkit.scripts.get_model_info -r $run_id -f json --output mlflow_eval.json
           model_version=$( cat model_info.json | jq -r '.version')
 
           python -m model.evaluate \
