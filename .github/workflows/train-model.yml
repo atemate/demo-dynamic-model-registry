@@ -6,7 +6,7 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      experiment_name:  {type: str, required: true}
+      experiment_name:  {type: str}  # defaults to 'manual-20221023-132413'
       learning_rate:    {type: str, required: true}
       max_depth:        {type: str, required: true}
       n_estimators:     {type: str, required: true}
@@ -57,7 +57,7 @@ jobs:
             experiment_name=${experiment_name:-"main"}
 
           else
-            timestamp=$(date +"%Y%m%d%H%M%S")
+            timestamp=$(date +"%Y%m%d-%H%M%S")
             experiment_name=${experiment_name:-"manual-${timestamp}"}
           fi
 
@@ -70,7 +70,7 @@ jobs:
 
       - name: Train model
         run: |
-          python model/train.py \
+          python -m model_package.train \
             --experiment_name=${experiment_name} \
             --run_name="lr-${learning_rate}-md-${max_depth}-ne-${n_estimators}" \
             --learning_rate=${learning_rate} \
