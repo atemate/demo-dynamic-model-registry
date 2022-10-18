@@ -24,7 +24,7 @@ jobs:
       - name: Install model dependencies
         run: pip install -r model/requirements.txt
 
-      - name: Run training
+      - name: Train model with different parameters
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
           MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
@@ -33,8 +33,23 @@ jobs:
           # doesn't support 'mlflow.search_experiments()' call:
           PYTHONWARNINGS: ignore
         run: |
-          cat train-change-params.sh
-          chmod +x train-change-params.sh
-
           export EXPERIMENT_NAME="train-change-params-$(date +"%Y%m%d%H%M%S")"
-          ./train-change-params.sh
+
+          for learning_rate in 0.01 0.05 0.1 0.3 0.5; do
+              echo learning_rate=$learning_rate
+              for max_depth in 5 10 15; do
+                  echo max_depth=$max_depth
+                  for n_estimators in 5 10 20 50; do
+                      echo n_estimators=$n_estimators
+                      
+                      python model/train.py \
+                          --experiment_name=$EXPERIMENT_NAME \
+                          --run_name="lr-$learning_rate-md-$max_depth-ne-$n_estimators" \
+                          --learning_rate $learning_rate \
+                          --max_depth $max_depth \
+                          --n_estimators $n_estimators
+
+                  done
+              done
+          done
+
