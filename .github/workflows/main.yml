@@ -1,0 +1,22 @@
+name: "CI/CD with MLflow"
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          import mlflow
+          mlflow.start_run()
+          mlflow.log_param("parameter name", "value")
+          mlflow.log_metric("metric name", 1)
