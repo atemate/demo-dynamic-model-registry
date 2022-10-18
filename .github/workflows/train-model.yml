@@ -28,6 +28,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          # Checkout pull request HEAD commit instead of merge commit,
+          # fetch all history for all branches and tags, needed for getting
+          # last change of model code:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
       - name: Install Python
         uses: actions/setup-python@v4
         with:
@@ -81,9 +88,9 @@ jobs:
           run_name=$(cat mlflow_run.json        | jq -r '.info.run_name')
           run_id=$(cat mlflow_run.json          | jq -r '.info.run_id')
 
-          python -m mlflow_toolkit.get_experiment_info $experiment_id -f md > experiment_info.md
+          python -m mlflow_toolkit.get_experiment_info $experiment_id -f md --output experiment_info.md
 
-          python -m mlflow_toolkit.get_model_info $run_id -f json > model_info.json
+          python -m mlflow_toolkit.get_model_info $run_id -f json --output model_info.json
           model_name=$(cat model_info.json    | jq -r '.name')
           model_version=$(cat model_info.json | jq -r '.version')
 
