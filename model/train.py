@@ -81,13 +81,11 @@ def train(
 
         # Log mlflow run info
         info = {
-            "mlflow": {
-                "tracking_uri": mlflow.get_tracking_uri(),
-                "experiment_name": experiment_name,
-                "experiment_id": run.info.experiment_id,
-                "run_name": run_name,
-                "run_id": run.info.run_id,
-            }
+            "tracking_uri": mlflow.get_tracking_uri(),
+            "experiment_name": experiment_name,
+            "experiment_id": run.info.experiment_id,
+            "run_name": run_name,
+            "run_id": run.info.run_id,
         }
         log.info(f"MLflow info: {info}")
         if output_mlflow_json_file:
