@@ -65,7 +65,8 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install -e model_package mlflow_toolkit
+          pip install -e model_package
+          pip install -e mlflow_toolkit
 
       - name: Train model
         run: |

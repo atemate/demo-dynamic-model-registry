@@ -11,59 +11,11 @@ log = logging.getLogger(__file__)
 log.setLevel(logging.INFO)
 
 
-
-
-def sigmoid(x):
-    y = 1 / (1 + math.exp(-x))
-    return float(f"{y:.3f}")
-
-
-class MockModel:
-    def __init__(self, learning_rate: float, max_depth: int, n_estimators: int):
-        self.learning_rate = learning_rate
-        self.max_depth = max_depth
-        self.n_estimators = n_estimators
-        # Log parameters
-        mlflow.log_param("learning_rate", self.learning_rate)
-        mlflow.log_param("max_depth", self.max_depth)
-        mlflow.log_param("n_estimators", self.n_estimators)
-
-    def fit(self, *args, **kwargs):
-        # assign random values to metrics
-        roc_auc = sigmoid(
-            sigmoid(self.learning_rate * self.max_depth * self.n_estimators)
-        )
-        precision = sigmoid(roc_auc)
-        accuracy = sigmoid(precision)
-        f1 = sigmoid(accuracy)
-
-        # Log metrics
-        mlflow.log_metric("roc_auc", roc_auc)
-        mlflow.log_metric("precision", precision)
-        mlflow.log_metric("accuracy", accuracy)
-        mlflow.log_metric("f1", f1)
-
-    def predict(self, *args, **kwargs):
-        pass
-
-
-def _get_or_create_mlflow_experiment_id(exp_name: str, use_legacy_api=True) -> str:
-    """MLflow helper to get or create an experiment by name."""
-    if use_legacy_api:
-        # Legacy API: DagsHub does not support search_experiments()
-        exps = [e for e in mlflow.list_experiments() if e.name == exp_name]
-    else:
-        exps = mlflow.search_experiments(filter_string=f"name='{exp_name}'")
-
-    return exps[0].experiment_id if exps else mlflow.create_experiment(exp_name)
-
-
-def train(
+def evaluate(
     *,
     experiment_name: str,
     run_name: str = None,
-    model_params: dict,
-    output_mlflow_json_file: Path = None,
+    models: list,
 ):
     experiment_id = _get_or_create_mlflow_experiment_id(experiment_name)
 
