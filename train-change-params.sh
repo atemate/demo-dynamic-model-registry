@@ -1,7 +1,6 @@
 set -euv
 
-TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-echo TIMESTAMP=$TIMESTAMP
+echo EXPERIMENT_NAME=${EXPERIMENT_NAME}  # required
 
 for learning_rate in 0.01 0.05 0.1 0.3 0.5; do
     echo learning_rate=$learning_rate
@@ -11,12 +10,11 @@ for learning_rate in 0.01 0.05 0.1 0.3 0.5; do
             echo n_estimators=$n_estimators
             
             python model/train.py \
-                --experiment_name="train-change-params-$TIMESTAMP" \
+                --experiment_name=$EXPERIMENT_NAME \
                 --run_name="lr-$learning_rate-md-$max_depth-ne-$n_estimators" \
                 --learning_rate $learning_rate \
                 --max_depth $max_depth \
-                --n_estimators $n_estimators \
-                --timestamp $TIMESTAMP
+                --n_estimators $n_estimators
 
         done
     done

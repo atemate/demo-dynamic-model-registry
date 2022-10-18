@@ -1,4 +1,4 @@
-name: "Train model with different hyperparameters"
+name: "Train model with different parameters"
 
 on:
   pull_request:
@@ -36,4 +36,5 @@ jobs:
           cat train-change-params.sh
           chmod +x train-change-params.sh
 
+          export EXPERIMENT_NAME="train-change-params-$(date +"%Y%m%d%H%M%S")"
           ./train-change-params.sh
