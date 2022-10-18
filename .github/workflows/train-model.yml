@@ -79,14 +79,20 @@ jobs:
             --n_estimators=${n_estimators} \
             --output_mlflow_json_file=mlflow_run.json
 
+      - name: Evaluate model
+        run: |
+          python -m model.evaluate \
+            --experiment_name=${experiment_name} \
+            --run_id=$(jq -r '.run_id' mlflow_run.json)
+
       - name: Generate summary
         run: |
           cat mlflow_run.json  # debug
-          tracking_uri=$(cat mlflow_run.json    | jq -r '.tracking_uri')
-          experiment_name=$(cat mlflow_run.json | jq -r '.experiment_name')
-          experiment_id=$(cat mlflow_run.json   | jq -r '.experiment_id')
-          run_name=$(cat mlflow_run.json        | jq -r '.run_name')
-          run_id=$(cat mlflow_run.json          | jq -r '.run_id')
+          tracking_uri=$(mlflow_run.json    | jq -r '.tracking_uri')
+          experiment_name=$(mlflow_run.json | jq -r '.experiment_name')
+          experiment_id=$(mlflow_run.json   | jq -r '.experiment_id')
+          run_name=$(mlflow_run.json        | jq -r '.run_name')
+          run_id=$(mlflow_run.json          | jq -r '.run_id')
 
           python -m mlflow_toolkit.scripts.get_model_info -r $run_id -f json --output model_info.json
           model_name=$(cat model_info.json    | jq -r '.name')

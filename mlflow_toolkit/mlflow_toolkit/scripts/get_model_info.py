@@ -6,9 +6,7 @@ from pathlib import Path
 import mlflow
 import pandas as pd
 
-logging.basicConfig
-log = logging.getLogger(__file__)
-log.setLevel(logging.INFO)
+log = logging.getLogger()
 
 
 def get_args() -> argparse.Namespace:
@@ -62,4 +60,6 @@ def main(args=None):
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
+    log.setLevel(logging.INFO)
     main()

@@ -7,9 +7,8 @@ import mlflow
 
 from .utils import _get_or_create_mlflow_experiment_id, sigmoid
 
-logging.basicConfig
-log = logging.getLogger(__file__)
-log.setLevel(logging.INFO)
+
+log = logging.getLogger()
 
 
 class MockModel:
@@ -91,6 +90,9 @@ def get_args():
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
+    log.setLevel(logging.INFO)
+
     args = get_args()
     log.info(f"Arguments: {args}")
 

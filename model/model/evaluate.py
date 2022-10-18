@@ -5,22 +5,28 @@ import mlflow
 
 from .utils import _get_or_create_mlflow_experiment_id, apply_fun, sigmoid
 
-logging.basicConfig
-log = logging.getLogger(__file__)
-log.setLevel(logging.INFO)
-
+log = logging.getLogger()
 
 def evaluate(
     *,
     experiment_name: str,
-    model_name: str,
+    run_id: str = None,
+    model_name: str = None,
     model_version: int = None,
 ):
     experiment_id = _get_or_create_mlflow_experiment_id(experiment_name)
     client = mlflow.MlflowClient()
 
-    log.info(f"Loading model '{model_name}' version '{model_version}'")
-    model = client.get_model_version(model_name, model_version)
+    if run_id:
+        log.info(f"Loading model from run '{run_id}'")
+        run = client.get_run(run_id)
+        model = mlflow.MlflowClient().search_model_versions(f"run_id='{run_id}'")[0]
+    else:
+        assert model_name and model_version, (model_name, model_version)
+        log.info(f"Loading model '{model_name}' version '{model_version}'")
+        model = client.get_model_version(model_name, model_version)
+    model_name = model.name
+    log.info(f"Loaded model '{model_name}': {model}")
 
     log.info(f"Loading champion model verisons for '{model_name}'")
     champions = client.get_latest_versions(model_name, stages=["Production", "Staging"])
@@ -68,17 +74,27 @@ def evaluate(
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--experiment_name", required=True)
-    parser.add_argument("-m", "--model_name", required=True)
-    parser.add_argument("-v", "--model_version", type=int)
+    parser.add_argument("-m", "--model_name")
+    parser.add_argument("-v", "--model_version", type=int)  # alternative to --run_id
+    parser.add_argument("-r", "--run_id") # alternative to --model_version
     return parser.parse_args()
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
+    log.setLevel(logging.INFO)
+
     args = get_args()
     log.info(f"Arguments: {args}")
 
+    run_id = args.run_id
+    model_name, model_version = args.model_name, args.model_version
+    if not run_id and not (model_name or model_version):
+        raise ValueError("Either run_id or (model_name and model_version) must be provided")
+
     evaluate(
         experiment_name=args.experiment_name,
-        model_name=args.model_name,
-        model_version=args.model_version,
+        run_id=run_id,
+        model_name=model_name,
+        model_version=model_version,
     )
