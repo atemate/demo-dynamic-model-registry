@@ -40,6 +40,12 @@ jobs:
           # last change of model code:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+      
+      - run: |
+          echo $MLFLOW_TRACKING_URI > MLFLOW_TRACKING_URI.txt
+          cat MLFLOW_TRACKING_URI.txt
+          echo $MLFLOW_TRACKING_URI >> $GITHUB_STEP_SUMMARY
+          false
 
       - name: Set fallback variables
         run: |
