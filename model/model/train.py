@@ -1,14 +1,12 @@
 import argparse
-import json
 import logging
 from pathlib import Path
 
 import mlflow
 
-from .utils import _get_or_create_mlflow_experiment_id, sigmoid
+from .utils import dump_mlflow_info, get_or_create_mlflow_experiment_id, sigmoid
 
-
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 class MockModel:
@@ -38,7 +36,8 @@ class MockModel:
 
     def predict(self, *args, **kwargs):
         # return mock value
-        return sigmoid(self.learning_rate + self.max_depth + self.n_estimators)
+        mock_value = self.learning_rate * self.max_depth * self.n_estimators
+        return sigmoid(1 - sigmoid(mock_value))
 
 
 def train(
@@ -49,7 +48,7 @@ def train(
     model_params: dict,
     output_mlflow_json_file: Path = None,
 ):
-    experiment_id = _get_or_create_mlflow_experiment_id(experiment_name)
+    experiment_id = get_or_create_mlflow_experiment_id(experiment_name)
 
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
         # train the model ...
@@ -63,18 +62,7 @@ def train(
         )
 
         # Log mlflow run info
-        info = {
-            "tracking_uri": mlflow.get_tracking_uri(),
-            "experiment_name": experiment_name,
-            "experiment_id": run.info.experiment_id,
-            "run_name": run_name,
-            "run_id": run.info.run_id,
-        }
-        log.info(f"MLflow info: {info}")
-        if output_mlflow_json_file:
-            log.info(f"Writing MLflow run info to {output_mlflow_json_file}")
-            output_mlflow_json_file.parent.mkdir(parents=True, exist_ok=True)
-            output_mlflow_json_file.write_text(json.dumps(info, indent=4))
+        dump_mlflow_info(output_mlflow_json_file, experiment_name, run, run_name)
 
 
 def get_args():

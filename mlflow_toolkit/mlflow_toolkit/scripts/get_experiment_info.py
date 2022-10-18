@@ -4,7 +4,7 @@ from pathlib import Path
 
 import mlflow
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 def get_args() -> argparse.Namespace:

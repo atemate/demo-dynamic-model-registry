@@ -1,11 +1,18 @@
 import argparse
 import logging
+from pathlib import Path
 
 import mlflow
 
-from .utils import _get_or_create_mlflow_experiment_id, apply_fun, sigmoid
+from .utils import (
+    apply_fun,
+    dump_mlflow_info,
+    get_or_create_mlflow_experiment_id,
+    sigmoid,
+)
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
+
 
 def evaluate(
     *,
@@ -13,8 +20,9 @@ def evaluate(
     run_id: str = None,
     model_name: str = None,
     model_version: int = None,
+    output_mlflow_json_file: Path = None,
 ):
-    experiment_id = _get_or_create_mlflow_experiment_id(experiment_name)
+    experiment_id = get_or_create_mlflow_experiment_id(experiment_name)
     client = mlflow.MlflowClient()
 
     if run_id:
@@ -57,7 +65,6 @@ def evaluate(
             # # Evaluating sklearn model
             sk_model = mlflow.sklearn.load_model(model.source)
             predictions = sk_model.predict(...)
-            print(predictions)
 
             # Calculating metrics
             metrics = {
@@ -70,13 +77,17 @@ def evaluate(
             for name, value in metrics.items():
                 mlflow.log_metric(f"metric.{name}", value)
 
+    # Log mlflow run info
+    dump_mlflow_info(output_mlflow_json_file, experiment_name)
+
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--experiment_name", required=True)
     parser.add_argument("-m", "--model_name")
     parser.add_argument("-v", "--model_version", type=int)  # alternative to --run_id
-    parser.add_argument("-r", "--run_id") # alternative to --model_version
+    parser.add_argument("-r", "--run_id")  # alternative to --model_version
+    parser.add_argument("--output_mlflow_json_file", type=Path)
     return parser.parse_args()
 
 
@@ -90,7 +101,9 @@ if __name__ == "__main__":
     run_id = args.run_id
     model_name, model_version = args.model_name, args.model_version
     if not run_id and not (model_name or model_version):
-        raise ValueError("Either run_id or (model_name and model_version) must be provided")
+        raise ValueError(
+            "Either run_id or (model_name and model_version) must be provided"
+        )
 
     evaluate(
         experiment_name=args.experiment_name,
