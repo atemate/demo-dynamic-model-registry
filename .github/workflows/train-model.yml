@@ -1,0 +1,130 @@
+name: train-model
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      experiment_prefix:  {type: str}  # defaults to 'manual-20221023-132413'
+      learning_rate:      {type: str, required: true}
+      max_depth:          {type: str, required: true}
+      n_estimators:       {type: str, required: true}
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # inputs:
+  experiment_prefix:  ${{ inputs.experiment_prefix }}
+  learning_rate:      ${{ inputs.learning_rate || 0.1 }}
+  max_depth:          ${{ inputs.max_depth     || 10 }}
+  n_estimators:       ${{ inputs.n_estimators  || 5 }}
+  # mlflow:
+  MLFLOW_TRACKING_URI:      https://dagshub.com/atemate/mlflow-with-gh-actions.mlflow
+  MLFLOW_TRACKING_USERNAME: atemate
+  MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
+  PYTHONWARNINGS: ignore # silence MLflow deprecation warnings as DagsHub doesn't support 'mlflow.search_experiments()'
+          
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # Checkout pull request HEAD commit instead of merge commit,
+          # fetch all history for all branches and tags, needed for getting
+          # last change of model code:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Set fallback variables
+        run: |
+          if [[ $GITHUB_EVENT_NAME == "pull_request" ]]; then
+            pr_number=$(jq -r .pull_request.number "$GITHUB_EVENT_PATH")
+            experiment_prefix=${experiment_prefix:-"pr${pr_number}-$(date +%Y%m%d-%H%M%S)"}
+
+          elif [[ $GITHUB_EVENT_NAME == "push" ]]; then
+            experiment_prefix=${experiment_prefix:-"main"}
+
+          else
+            timestamp=$(date +"%Y%m%d-%H%M%S")
+            experiment_prefix=${experiment_prefix:-"manual-${timestamp}"}
+          fi
+
+          echo "experiment_prefix=${experiment_prefix}" >> $GITHUB_ENV
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: pip
+      
+      - name: Install dependencies
+        run: |
+          pip install -e model
+          pip install -e mlflow_toolkit
+
+
+      - name: Train model
+        run: |
+          python -m model.train \
+            --experiment_name=${experiment_prefix}-train \
+            --run_name="train-run" \
+            --model_name="my-model" \
+            --learning_rate=${learning_rate} \
+            --max_depth=${max_depth} \
+            --n_estimators=${n_estimators} \
+            --output_mlflow_json_file=mlflow_train.json
+
+      - name: Load run info
+        run: |
+          run_id=$(cat mlflow_train.json | jq -r '.run_id')
+          echo "run_id=${run_id}" >> $GITHUB_ENV
+
+          python -m mlflow_toolkit.scripts.get_model_info -r $run_id -f json --output model_info.json
+
+      - name: Evaluate model
+        run: |
+          model_version=$( cat model_info.json | jq -r '.version')
+
+          python -m model.evaluate \
+            --experiment_name=${experiment_prefix}-eval-v${model_version} \
+            --run_id=${run_id} \
+            --output_mlflow_json_file=mlflow_eval.json
+
+      - name: Generate summary
+        run: |
+          cat mlflow_train.json  # debug
+          cat mlflow_eval.json  # debug
+
+          tracking_uri=$(    cat mlflow_train.json | jq -r '.tracking_uri')
+          experiment_name=$( cat mlflow_train.json | jq -r '.experiment_name')
+          experiment_id=$(   cat mlflow_train.json | jq -r '.experiment_id')
+          run_name=$(        cat mlflow_train.json | jq -r '.run_name')
+
+          eval_experiment_name=$( cat mlflow_eval.json | jq -r '.experiment_name')
+          eval_experiment_id=$(   cat mlflow_eval.json | jq -r '.experiment_id')
+
+          model_name=$(    cat model_info.json | jq -r '.name')
+          model_version=$( cat model_info.json | jq -r '.version')
+
+          experiment_link="${tracking_uri}/#/experiments/${experiment_id}"
+          run_link="${tracking_uri}/#/experiments/${experiment_id}/runs/${run_id}"
+          model_link="${tracking_uri}/#/models/${model_name}/versions/${model_version}"
+          eval_experiment_link="${tracking_uri}/#/experiments/${eval_experiment_id}"
+
+          # Generate summary
+          echo "### Training completed! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "- Training experiment: [$experiment_name]($experiment_link)" >> $GITHUB_STEP_SUMMARY
+          echo "- Evaluation experiment: [$eval_experiment_name]($eval_experiment_link)" >> $GITHUB_STEP_SUMMARY
+          echo "- Training run: [$run_name]($run_link)" >> $GITHUB_STEP_SUMMARY
+          echo "- Model: [$model_name, Version $model_version]($model_link) " >> $GITHUB_STEP_SUMMARY
+
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat model_info.json >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
