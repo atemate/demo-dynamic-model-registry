@@ -48,7 +48,9 @@ def train(
     model_params: dict,
     output_mlflow_json_file: Path = None,
 ):
-    experiment_id = get_or_create_mlflow_experiment_id(experiment_name)
+    experiment_id = get_or_create_mlflow_experiment_id(
+        experiment_name, use_legacy_api=True
+    )
 
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
         # train the model ...

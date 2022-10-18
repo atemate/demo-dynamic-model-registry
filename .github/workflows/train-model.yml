@@ -74,7 +74,7 @@ jobs:
         run: |
           python -m model.train \
             --experiment_name=${experiment_prefix}-train \
-            --run_name="lr-${learning_rate}-md-${max_depth}-ne-${n_estimators}" \
+            --run_name="train-run" \
             --model_name="my-model" \
             --learning_rate=${learning_rate} \
             --max_depth=${max_depth} \

@@ -8,7 +8,7 @@ import mlflow
 log = logging.getLogger()
 
 
-def get_or_create_mlflow_experiment_id(exp_name: str, use_legacy_api=True) -> str:
+def get_or_create_mlflow_experiment_id(exp_name: str, use_legacy_api=False) -> str:
     """MLflow helper to get or create an experiment by name."""
     if use_legacy_api:
         # Legacy API: DagsHub does not support search_experiments()
