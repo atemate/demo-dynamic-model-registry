@@ -15,8 +15,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - run: |
-          import mlflow
-          mlflow.start_run()
-          mlflow.log_param("parameter name", "value")
-          mlflow.log_metric("metric name", 1)
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: pip
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run training
+        run: |
+          python train.py
