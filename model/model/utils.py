@@ -10,13 +10,18 @@ log = logging.getLogger()
 
 def get_or_create_mlflow_experiment_id(exp_name: str, use_legacy_api=False) -> str:
     """MLflow helper to get or create an experiment by name."""
+    log.info(f"Getting experiment ID by name: '{exp_name}'")
     if use_legacy_api:
+        log.info(f"Using legacy API: DagsHub does not support search_experiments()")
         # Legacy API: DagsHub does not support search_experiments()
         exps = [e for e in mlflow.list_experiments() if e.name == exp_name]
     else:
         exps = mlflow.search_experiments(filter_string=f"name='{exp_name}'")
 
-    return exps[0].experiment_id if exps else mlflow.create_experiment(exp_name)
+    log.info(f"Found: {len(exps)} experiments: {exps}")
+    exp_id = exps[0].experiment_id if exps else mlflow.create_experiment(exp_name)
+    log.info(f"Experiment ID: {exp_id}")
+    return exp_id
 
 
 def dump_mlflow_info(

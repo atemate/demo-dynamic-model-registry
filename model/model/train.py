@@ -53,6 +53,7 @@ def train(
     )
 
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
+        log.info(f"Experiment started: {experiment_id}")
         # train the model ...
         log.info(f"Training model with params: {model_params}")
         model = MockModel(**model_params)

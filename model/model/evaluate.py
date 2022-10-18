@@ -22,7 +22,9 @@ def evaluate(
     model_version: int = None,
     output_mlflow_json_file: Path = None,
 ):
-    experiment_id = get_or_create_mlflow_experiment_id(experiment_name)
+    experiment_id = get_or_create_mlflow_experiment_id(
+        experiment_name, use_legacy_api=True
+    )
     client = mlflow.MlflowClient()
 
     if run_id:
@@ -43,9 +45,12 @@ def evaluate(
     log.info(f"Loaded {len(models)} models: {models}")
 
     for model in models:
+
         log.info(f"Evaluating model '{model_name}' version '{model.version}'")
         run_name = f"eval-{model_name}-v{model.version}"
         with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
+            log.info(f"Experiment started: {experiment_id}: {run_name}")
+
             # log model names
             mlflow.log_param("model_name", model_name)
             mlflow.log_param("model_version", model.version)
