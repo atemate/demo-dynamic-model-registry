@@ -110,4 +110,5 @@ if __name__ == "__main__":
         run_id=run_id,
         model_name=model_name,
         model_version=model_version,
+        output_mlflow_json_file=args.output_mlflow_json_file,
     )

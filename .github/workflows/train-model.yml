@@ -45,7 +45,8 @@ jobs:
         run: |
           if [[ $GITHUB_EVENT_NAME == "pull_request" ]]; then
             pr_number=$(jq -r .pull_request.number "$GITHUB_EVENT_PATH")
-            experiment_prefix=${experiment_prefix:-"pr${pr_number}"}
+            branch=${{ github.head_ref }}
+            experiment_prefix=${experiment_prefix:-"pr${pr_number}-${branch}"}
 
           elif [[ $GITHUB_EVENT_NAME == "push" ]]; then
             experiment_prefix=${experiment_prefix:-"main"}
@@ -90,6 +91,8 @@ jobs:
       - name: Generate summary
         run: |
           cat mlflow_train.json  # debug
+          cat mlflow_eval.json  # debug
+
           tracking_uri=$(      cat mlflow_train.json | jq -r '.tracking_uri')
           experiment_prefix=$( cat mlflow_train.json | jq -r '.experiment_prefix')
           experiment_id=$(     cat mlflow_train.json | jq -r '.experiment_id')
