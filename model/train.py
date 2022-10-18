@@ -1,9 +1,10 @@
 import argparse
+import logging
+import math
 import tempfile
+
 import joblib
 import mlflow
-import math
-import logging
 
 logging.basicConfig
 log = logging.getLogger(__file__)
@@ -11,9 +12,10 @@ log.setLevel(logging.INFO)
 
 MODEL_NAME = "my-model"
 
+
 def sigmoid(x):
-  y = 1 / (1 + math.exp(-x))
-  return float(f"{y:.3f}")
+    y = 1 / (1 + math.exp(-x))
+    return float(f"{y:.3f}")
 
 
 class MockModel:
@@ -45,7 +47,7 @@ def _get_or_create_mlflow_experiment_id(exp_name: str) -> str:
     return exp_id
 
 
-def train( experiment_name: str, run_name: str, model_params: dict):
+def train(experiment_name: str, run_name: str, model_params: dict):
     experiment_id = _get_or_create_mlflow_experiment_id(experiment_name)
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name):
         # train the model ...
@@ -59,9 +61,11 @@ def train( experiment_name: str, run_name: str, model_params: dict):
 
         # Train mock model, assign random values to metrics:
         model.fit()
-        roc_auc = sigmoid(sigmoid(model.learning_rate * model.max_depth * model.n_estimators))
+        roc_auc = sigmoid(
+            sigmoid(model.learning_rate * model.max_depth * model.n_estimators)
+        )
         precision = sigmoid(roc_auc)
-        accuracy = sigmoid( precision)
+        accuracy = sigmoid(precision)
         f1 = sigmoid(accuracy)
         log.info(f"roc_auc={roc_auc}")
         log.info(f"precision={precision}")
@@ -105,4 +109,8 @@ if __name__ == "__main__":
         max_depth=args.max_depth,
         n_estimators=args.n_estimators,
     )
-    train(experiment_name=args.experiment_name,  run_name=args.run_name, model_params=model_params)
+    train(
+        experiment_name=args.experiment_name,
+        run_name=args.run_name,
+        model_params=model_params,
+    )
