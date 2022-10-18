@@ -69,6 +69,7 @@ jobs:
           pip install -e model
           pip install -e mlflow_toolkit
 
+
       - name: Train model
         run: |
           python -m model.train \
@@ -80,13 +81,18 @@ jobs:
             --n_estimators=${n_estimators} \
             --output_mlflow_json_file=mlflow_train.json
 
+
       - name: Evaluate model
         run: |
           run_id=$(cat mlflow_train.json | jq -r '.run_id')
+          python -m mlflow_toolkit.scripts.get_model_info -r $run_id -f json --output model_info.json
+          model_version=$( cat model_info.json | jq -r '.version')
+
           python -m model.evaluate \
-            --experiment_name=${experiment_prefix}-eval \
+            --experiment_name=${experiment_prefix}-eval-v${model_version} \
             --run_id=${run_id} \
             --output_mlflow_json_file=mlflow_eval.json
+
 
       - name: Generate summary
         run: |

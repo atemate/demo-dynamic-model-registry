@@ -77,11 +77,8 @@ def get_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
-    logging.basicConfig()
-    log.setLevel(logging.INFO)
-
-    args = get_args()
+def main(args=None):
+    args = args or get_args()
     log.info(f"Arguments: {args}")
 
     model_params = dict(
@@ -96,3 +93,9 @@ if __name__ == "__main__":
         model_params=model_params,
         output_mlflow_json_file=args.output_mlflow_json_file,
     )
+
+
+if __name__ == "__main__":
+    logging.basicConfig()
+    log.setLevel(logging.INFO)
+    main()
