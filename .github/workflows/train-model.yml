@@ -34,6 +34,22 @@ jobs:
           python-version: 3.9
           cache: pip
       
+      - name: Set fallback variables
+        run: |
+          if [[ $GITHUB_EVENT_NAME == "pull_request" ]]; then
+            pr_number=$(jq -r .pull_request.number "$GITHUB_EVENT_PATH")
+            experiment_name=${experiment_name:-"pr${pr_number}"}
+
+          elif [[ $GITHUB_EVENT_NAME == "push" ]]; then
+            experiment_name=${experiment_name:-"main"}
+
+          else
+            timestamp=$(date +"%Y%m%d%H%M%S")
+            experiment_name=${experiment_name:-"manual-${timestamp}"}
+          fi
+
+          echo "experiment_name=${experiment_name}" >> $GITHUB_ENV
+
       - name: Install dependencies
         run: |
           pip install -e mlflow_toolkit
@@ -55,7 +71,8 @@ jobs:
             --max_depth=${max_depth} \
             --n_estimators=${n_estimators} \
             --output_mlflow_json_file=mlflow_run.json
-          
+
+
       - name: Generate summary
         run: |
           tracking_uri=$(cat mlflow_run.json    | jq -r '.info.tracking_uri')
