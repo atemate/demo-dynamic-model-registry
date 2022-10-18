@@ -16,11 +16,17 @@ defaults:
     shell: bash
 
 env:
+  # inputs:
   experiment_name:  ${{ inputs.experiment_name }}
   learning_rate:    ${{ inputs.learning_rate || 0.1 }}
   max_depth:        ${{ inputs.max_depth     || 10 }}
   n_estimators:     ${{ inputs.n_estimators  || 5 }}
-  
+  # mlflow:
+  MLFLOW_TRACKING_URI:      ${{ secrets.MLFLOW_TRACKING_URI }}
+  MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+  MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
+  PYTHONWARNINGS: ignore # silence MLflow deprecation warnings as DagsHub doesn't support 'mlflow.search_experiments()'
+          
 
 jobs:
   test:
@@ -60,16 +66,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e mlflow_toolkit
-          pip install -r model/requirements.txt
+          pip install -e model_package
 
       - name: Train model
-        env:
-          MLFLOW_TRACKING_URI:      ${{ secrets.MLFLOW_TRACKING_URI }}
-          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
-          # silence mlflow deprecation warnings as DagsHub's MLflow
-          # doesn't support 'mlflow.search_experiments()' call:
-          PYTHONWARNINGS: ignore
         run: |
           python model/train.py \
             --experiment_name=${experiment_name} \
@@ -78,7 +77,6 @@ jobs:
             --max_depth=${max_depth} \
             --n_estimators=${n_estimators} \
             --output_mlflow_json_file=mlflow_run.json
-
 
       - name: Generate summary
         run: |
