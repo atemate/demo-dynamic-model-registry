@@ -1,11 +1,10 @@
 import argparse
 import json
 import logging
-import math
 from pathlib import Path
-
+from .utils import _get_or_create_mlflow_experiment_id
 import mlflow
-
+from typing import List
 logging.basicConfig
 log = logging.getLogger(__file__)
 log.setLevel(logging.INFO)
@@ -15,11 +14,12 @@ def evaluate(
     *,
     experiment_name: str,
     run_name: str = None,
-    models: list,
+    models_paths: List[Path],
 ):
     experiment_id = _get_or_create_mlflow_experiment_id(experiment_name)
 
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
+
         # train the model ...
         log.info(f"Training model with params: {model_params}")
         model = MockModel(**model_params)
