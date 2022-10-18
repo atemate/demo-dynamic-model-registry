@@ -23,7 +23,7 @@ env:
   n_estimators:       ${{ inputs.n_estimators  || 5 }}
   # mlflow:
   MLFLOW_TRACKING_URI:      https://dagshub.com/atemate/mlflow-with-gh-actions.mlflow
-  MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+  MLFLOW_TRACKING_USERNAME: atemate
   MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
   PYTHONWARNINGS: ignore # silence MLflow deprecation warnings as DagsHub doesn't support 'mlflow.search_experiments()'
           
@@ -40,12 +40,6 @@ jobs:
           # last change of model code:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      
-      - run: |
-          echo $MLFLOW_TRACKING_URI > MLFLOW_TRACKING_URI.txt
-          cat MLFLOW_TRACKING_URI.txt
-          echo $MLFLOW_TRACKING_URI >> $GITHUB_STEP_SUMMARY
-          false
 
       - name: Set fallback variables
         run: |
@@ -99,13 +93,13 @@ jobs:
           cat mlflow_train.json  # debug
           cat mlflow_eval.json  # debug
 
-          tracking_uri=$(      cat mlflow_train.json | jq -r '.tracking_uri')
-          experiment_prefix=$( cat mlflow_train.json | jq -r '.experiment_prefix')
-          experiment_id=$(     cat mlflow_train.json | jq -r '.experiment_id')
-          run_name=$(          cat mlflow_train.json | jq -r '.run_name')
-          run_id=$(            cat mlflow_train.json | jq -r '.run_id')
+          tracking_uri=$(    cat mlflow_train.json | jq -r '.tracking_uri')
+          experiment_name=$( cat mlflow_train.json | jq -r '.experiment_name')
+          experiment_id=$(   cat mlflow_train.json | jq -r '.experiment_id')
+          run_name=$(        cat mlflow_train.json | jq -r '.run_name')
+          run_id=$(          cat mlflow_train.json | jq -r '.run_id')
 
-          eval_experiment_name=$( cat mlflow_eval.json | jq -r '.experiment_prefix')
+          eval_experiment_name=$( cat mlflow_eval.json | jq -r '.experiment_name')
           eval_experiment_id=$(   cat mlflow_eval.json | jq -r '.experiment_id')
 
           python -m mlflow_toolkit.scripts.get_model_info -r $run_id -f json --output model_info.json
@@ -119,10 +113,10 @@ jobs:
 
           # Generate summary
           echo "### Training completed! :rocket:" >> $GITHUB_STEP_SUMMARY
-          echo "- Training experiment: [$experiment_prefix]($experiment_link)" >> $GITHUB_STEP_SUMMARY
+          echo "- Training experiment: [$experiment_name]($experiment_link)" >> $GITHUB_STEP_SUMMARY
+          echo "- Evaluation experiment: [$eval_experiment_name]($eval_experiment_link)" >> $GITHUB_STEP_SUMMARY
           echo "- Training run: [$run_name]($run_link)" >> $GITHUB_STEP_SUMMARY
           echo "- Model: [$model_name, Version $model_version]($model_link) " >> $GITHUB_STEP_SUMMARY
-          echo "- Evaluation experiment: [$eval_experiment_name]($eval_experiment_link)" >> $GITHUB_STEP_SUMMARY
 
           echo '```json' >> $GITHUB_STEP_SUMMARY
           cat model_info.json >> $GITHUB_STEP_SUMMARY
