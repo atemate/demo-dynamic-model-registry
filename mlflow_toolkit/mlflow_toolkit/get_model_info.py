@@ -1,7 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
-
+import json
 import mlflow
 import pandas as pd
 
@@ -13,7 +13,8 @@ log.setLevel(logging.INFO)
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "run_id",
+        "-r",
+        "--run_id",
         type=str,
         help="Run ID to get associated model from",
     )
@@ -50,13 +51,14 @@ def main(args=None):
         **{f"metric.{k}": v for k, v in run.data.metrics.items()},
         **{f"param.{k}": v for k, v in run.data.params.items()},
     }
-    df = pd.DataFrame.from_dict(info, orient="index")
+    
 
     if format == "json":
-        s = df.to_json(orient="records")
+        s = json.dumps(info)
     elif format == "prettyjson":
-        s = df.to_json(orient="records", indent=4)
+        s = json.dumps(info, indent=4)
     elif format == "md":
+        df = pd.DataFrame.from_dict(info, orient="index")
         s = df.to_markdown()
 
     log.info(f"Writing to '{output}'")

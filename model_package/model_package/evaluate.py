@@ -14,16 +14,13 @@ def evaluate(
     *,
     experiment_name: str,
     run_name: str = None,
-    models_paths: List[Path],
+    model_tags: list,
 ):
     experiment_id = _get_or_create_mlflow_experiment_id(experiment_name)
 
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
-
-        # train the model ...
-        log.info(f"Training model with params: {model_params}")
-        model = MockModel(**model_params)
-        model.fit()
+        log.info(f"Loading models by tags: {model_tags}")
+        
 
         # Log model
         mlflow.sklearn.log_model(
