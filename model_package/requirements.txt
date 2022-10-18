@@ -1,0 +1,3 @@
+mlflow==1.29.0
+sklearn  # for mlflow.sklearn.log_model
+joblib
