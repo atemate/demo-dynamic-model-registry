@@ -33,6 +33,7 @@ jobs:
           # doesn't support 'mlflow.search_experiments()' call:
           PYTHONWARNINGS: ignore
         run: |
-          cat train-with-different-params.sh
-          chmod +x train-with-different-params.sh
-          ./train-with-different-params.sh
+          cat train-change-params.sh
+          chmod +x train-change-params.sh
+
+          ./train-change-params.sh

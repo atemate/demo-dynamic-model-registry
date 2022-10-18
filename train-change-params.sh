@@ -11,7 +11,7 @@ for learning_rate in 0.01 0.05 0.1 0.3 0.5; do
             echo n_estimators=$n_estimators
             
             python train.py \
-                --experiment_name="train-$TIMESTAMP" \
+                --experiment_name="train-change-params-$TIMESTAMP" \
                 --run_name="lr-$learning_rate-md-$max_depth-ne-$n_estimators" \
                 --learning_rate $learning_rate \
                 --max_depth $max_depth \
