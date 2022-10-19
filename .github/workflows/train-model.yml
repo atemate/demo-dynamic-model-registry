@@ -7,9 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       experiment_prefix:  {type: str}  # defaults to 'manual-20221023-132413'
-      learning_rate:      {type: str, required: true}
-      max_depth:          {type: str, required: true}
-      n_estimators:       {type: str, required: true}
+      alpha:              {type: str}
+      l1_ratio:           {type: str}
+      data_train_size:    {type: str}
+      seed:               {type: str}
 
 defaults:
   run:
@@ -18,9 +19,10 @@ defaults:
 env:
   # inputs:
   experiment_prefix:  ${{ inputs.experiment_prefix }}
-  learning_rate:      ${{ inputs.learning_rate || 0.1 }}
-  max_depth:          ${{ inputs.max_depth     || 10 }}
-  n_estimators:       ${{ inputs.n_estimators  || 5 }}
+  alpha:              ${{ inputs.alpha || 0.5 }}
+  l1_ratio:           ${{ inputs.l1_ratio || 0.5 }}
+  data_train_size:    ${{ inputs.data_train_size || 0.8 }}
+  seed:               ${{ inputs.seed || 42 }}
   # mlflow:
   MLFLOW_TRACKING_URI:      https://dagshub.com/atemate/mlflow-with-gh-actions.mlflow
   MLFLOW_TRACKING_USERNAME: atemate
@@ -44,8 +46,9 @@ jobs:
       - name: Set fallback variables
         run: |
           if [[ $GITHUB_EVENT_NAME == "pull_request" ]]; then
+            branch=${{ github.head_ref }}
             pr_number=$(jq -r .pull_request.number "$GITHUB_EVENT_PATH")
-            experiment_prefix=${experiment_prefix:-"pr${pr_number}-$(date +%Y%m%d-%H%M%S)"}
+            experiment_prefix=${experiment_prefix:-"pr${pr_number}-${branch}"}
 
           elif [[ $GITHUB_EVENT_NAME == "push" ]]; then
             experiment_prefix=${experiment_prefix:-"main"}
@@ -72,12 +75,13 @@ jobs:
       - name: Train model
         run: |
           python -m model.train \
-            --experiment_name=${experiment_prefix}-train \
+            --experiment_name=${experiment_prefix}/train \
             --run_name="train-run" \
-            --model_name="my-model" \
-            --learning_rate=${learning_rate} \
-            --max_depth=${max_depth} \
-            --n_estimators=${n_estimators} \
+            --model_name="wine-classifier" \
+            --alpha=${alpha} \
+            --l1_ratio=${l1_ratio} \
+            --data_train_size=${data_train_size} \
+            --seed=${seed} \
             --output_mlflow_json_file=mlflow_train.json
 
       - name: Load run info
@@ -92,7 +96,7 @@ jobs:
           model_version=$( cat model_info.json | jq -r '.version')
 
           python -m model.evaluate \
-            --experiment_name=${experiment_prefix}-eval-v${model_version} \
+            --experiment_name=${experiment_prefix}/eval/v${model_version} \
             --run_id=${run_id} \
             --output_mlflow_json_file=mlflow_eval.json
 

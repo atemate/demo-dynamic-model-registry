@@ -1,9 +1,12 @@
 import json
 import logging
-import math
 from pathlib import Path
 
 import mlflow
+import numpy as np
+import sklearn.datasets
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
 
 log = logging.getLogger()
 
@@ -53,12 +56,24 @@ def dump_mlflow_info(
         output_mlflow_json_file.write_text(json.dumps(info, indent=4))
 
 
-def sigmoid(x):
-    y = 1 / (1 + math.exp(-x))
-    return float(f"{y:.3f}")
+def load_data(train_size: float = 0.8, seed: int = 42):
+    wine = sklearn.datasets.load_wine()
+    X, y = wine.data, wine.target
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, train_size=train_size, random_state=seed
+    )
+    X_test, X_val, y_test, y_val = train_test_split(
+        X_test, y_test, train_size=0.5, random_state=seed
+    )
+    log.info(f"X_train.shape: {X_train.shape}")
+    log.info(f"X_test.shape: {X_test.shape}")
+    log.info(f"X_val.shape: {X_val.shape}")
+
+    return (X_train, y_train), (X_test, y_test), (X_val, y_val)
 
 
-def apply_fun(f, x, times=1):
-    for _ in range(times):
-        x = f(x)
-    return x
+def eval_metrics(actual, pred):
+    rmse = np.sqrt(mean_squared_error(actual, pred))
+    mae = mean_absolute_error(actual, pred)
+    r2 = r2_score(actual, pred)
+    return {"rmse": rmse, "mae": mae, "r2": r2}
