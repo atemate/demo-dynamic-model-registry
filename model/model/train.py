@@ -5,30 +5,16 @@ from pathlib import Path
 import mlflow
 import mlflow.sklearn
 import numpy as np
-import sklearn.datasets
 from sklearn.linear_model import ElasticNet
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
 
-from .utils import dump_mlflow_info, get_or_create_mlflow_experiment_id
+from .utils import (
+    dump_mlflow_info,
+    eval_metrics,
+    get_or_create_mlflow_experiment_id,
+    load_data,
+)
 
 log = logging.getLogger()
-
-
-def eval_metrics(actual, pred):
-    rmse = np.sqrt(mean_squared_error(actual, pred))
-    mae = mean_absolute_error(actual, pred)
-    r2 = r2_score(actual, pred)
-    return rmse, mae, r2
-
-
-def load_data(train_size: float = 0.75, seed: int = 42):
-    wine = sklearn.datasets.load_wine()
-    X, y = wine.data, wine.target
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, train_size=train_size, stratify=y, random_state=seed
-    )
-    return X_train, X_test, y_train, y_test
 
 
 def train(
@@ -42,35 +28,39 @@ def train(
     seed: int = 42,
     output_mlflow_json_file: Path = None,
 ):
-    mlflow.sklearn.autolog()
+    # mlflow.sklearn.autolog()
 
     experiment_id = get_or_create_mlflow_experiment_id(
         experiment_name, use_legacy_api=True
     )
 
-    X_train, X_test, y_train, y_test = load_data(train_size=data_train_size, seed=seed)
+    (X_train, y_train), (X_test, y_test), (X_val, y_val) = load_data(
+        train_size=data_train_size, seed=seed
+    )
 
     with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
 
-        lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
-        lr.fit(X_train, y_train)
+        net = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
+        net.fit(X_train, y_train)
 
-        predicted_qualities = lr.predict(X_test)
-        (rmse, mae, r2) = eval_metrics(y_test, predicted_qualities)
+        predicted_qualities = net.predict(X_test)
+        metrics = eval_metrics(y_test, predicted_qualities)
 
         log.info("Elasticnet model (alpha=%f, l1_ratio=%f):" % (alpha, l1_ratio))
-        log.info("  RMSE: %s" % rmse)
-        log.info("  MAE: %s" % mae)
-        log.info("  R2: %s" % r2)
+        log.info("  RMSE: %s" % metrics["rmse"])
+        log.info("  MAE: %s" % metrics["mae"])
+        log.info("  R2: %s" % metrics["r2"])
 
         mlflow.log_param("alpha", alpha)
         mlflow.log_param("l1_ratio", l1_ratio)
         mlflow.log_param("data_train_size", data_train_size)
-        mlflow.log_metric("rmse", rmse)
-        mlflow.log_metric("r2", r2)
-        mlflow.log_metric("mae", mae)
+        mlflow.log_param("seed", seed)
 
-        mlflow.sklearn.log_model(lr, "model", registered_model_name=model_name)
+        mlflow.log_metric("rmse", metrics["rmse"])
+        mlflow.log_metric("r2", metrics["r2"])
+        mlflow.log_metric("mae", metrics["mae"])
+
+        mlflow.sklearn.log_model(net, "model", registered_model_name=model_name)
 
         # Log mlflow run info
         dump_mlflow_info(output_mlflow_json_file, experiment_name, run, run_name)
