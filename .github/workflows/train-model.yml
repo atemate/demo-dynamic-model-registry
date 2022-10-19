@@ -7,9 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       experiment_prefix:  {type: str}  # defaults to 'manual-20221023-132413'
-      learning_rate:      {type: str, required: true}
-      max_depth:          {type: str, required: true}
-      n_estimators:       {type: str, required: true}
+      alpha:              {type: str}
+      l1_ratio:           {type: str}
+      data_train_size:    {type: str}
+      seed:               {type: str}
 
 defaults:
   run:
@@ -18,9 +19,10 @@ defaults:
 env:
   # inputs:
   experiment_prefix:  ${{ inputs.experiment_prefix }}
-  learning_rate:      ${{ inputs.learning_rate || 0.1 }}
-  max_depth:          ${{ inputs.max_depth     || 10 }}
-  n_estimators:       ${{ inputs.n_estimators  || 5 }}
+  alpha:              ${{ inputs.alpha || 0.5 }}
+  l1_ratio:           ${{ inputs.l1_ratio || 0.5 }}
+  data_train_size:    ${{ inputs.data_train_size || 0.8 }}
+  seed:               ${{ inputs.seed || 42 }}
   # mlflow:
   MLFLOW_TRACKING_URI:      https://dagshub.com/atemate/mlflow-with-gh-actions.mlflow
   MLFLOW_TRACKING_USERNAME: atemate
@@ -76,9 +78,10 @@ jobs:
             --experiment_name=${experiment_prefix}/train \
             --run_name="train-run" \
             --model_name="wine-classifier" \
-            --learning_rate=${learning_rate} \
-            --max_depth=${max_depth} \
-            --n_estimators=${n_estimators} \
+            --alpha=${alpha} \
+            --l1_ratio=${l1_ratio} \
+            --data_train_size=${data_train_size} \
+            --seed=${seed} \
             --output_mlflow_json_file=mlflow_train.json
 
       - name: Load run info
