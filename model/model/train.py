@@ -78,7 +78,7 @@ def get_args():
     # data params:
     parser.add_argument("--data_train_size", type=float, default=0.75)
     # system params:
-    parser.add_argument("--seed", default=42)
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output_mlflow_json_file", type=Path)
     return parser.parse_args()
 
