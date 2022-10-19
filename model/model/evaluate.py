@@ -1,4 +1,5 @@
 import argparse
+import distutils.util
 import logging
 from pathlib import Path
 
@@ -97,7 +98,11 @@ def get_args():
     parser.add_argument("-m", "--model_name")
     parser.add_argument("-v", "--model_version", type=int)  # alternative to --run_id
     parser.add_argument("-r", "--run_id")  # alternative to --model_version
-    parser.add_argument("--compare_champions", type=bool, default=True)
+    parser.add_argument(
+        "--compare_champions",
+        type=lambda x: bool(distutils.util.strtobool(x)),
+        default=True,
+    )
     parser.add_argument("--output_mlflow_json_file", type=Path)
     return parser.parse_args()
 
