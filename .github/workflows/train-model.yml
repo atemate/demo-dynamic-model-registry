@@ -24,7 +24,7 @@ env:
   l1_ratio:           ${{ inputs.l1_ratio || 0.5 }}
   data_train_size:    ${{ inputs.data_train_size || 0.8 }}
   seed:               ${{ inputs.seed || 42 }}
-  compare_champions:  ${{ inputs.compare_champions || 'False' }}
+  compare_champions:  ${{ inputs.compare_champions || 'True' }}
   # mlflow:
   MLFLOW_TRACKING_URI:      https://dagshub.com/atemate/mlflow-with-gh-actions.mlflow
   MLFLOW_TRACKING_USERNAME: atemate
