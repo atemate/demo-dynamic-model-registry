@@ -1,4 +1,5 @@
 import argparse
+import distutils.util
 import logging
 from pathlib import Path
 
@@ -20,6 +21,7 @@ def evaluate(
     run_id: str = None,
     model_name: str = None,
     model_version: int = None,
+    compare_champions: bool = True,
     output_mlflow_json_file: Path = None,
 ):
     experiment_id = get_or_create_mlflow_experiment_id(
@@ -41,11 +43,15 @@ def evaluate(
     model_name = model.name
     log.info(f"Loaded model '{model_name}': {model}, params {params}")
 
-    log.info(f"Loading champion model verisons for '{model_name}'")
-    champions = client.get_latest_versions(model_name, stages=["Production", "Staging"])
-
-    models = list({m.version: m for m in [model] + champions}.values())
-    log.info(f"Loaded {len(models)} models: {models}")
+    if compare_champions:
+        log.info(f"Loading champion model verisons for '{model_name}'")
+        champions = client.get_latest_versions(
+            model_name, stages=["Production", "Staging"]
+        )
+        models = list({m.version: m for m in [model] + champions}.values())
+        log.info(f"Loaded {len(models)} models: {models}")
+    else:
+        models = [model]
 
     seed = int(params.get("seed", params.get("random_state", 42)))
     # load data for the model being evaluated. Careful with data leakage!
@@ -92,6 +98,11 @@ def get_args():
     parser.add_argument("-m", "--model_name")
     parser.add_argument("-v", "--model_version", type=int)  # alternative to --run_id
     parser.add_argument("-r", "--run_id")  # alternative to --model_version
+    parser.add_argument(
+        "--compare_champions",
+        type=lambda x: bool(distutils.util.strtobool(x)),
+        default=True,
+    )
     parser.add_argument("--output_mlflow_json_file", type=Path)
     return parser.parse_args()
 
@@ -117,6 +128,7 @@ def main(args=None):
         run_id=run_id,
         model_name=model_name,
         model_version=model_version,
+        compare_champions=args.compare_champions,
         output_mlflow_json_file=args.output_mlflow_json_file,
     )
 
