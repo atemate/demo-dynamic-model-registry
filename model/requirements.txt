@@ -1,4 +1,4 @@
 mlflow==1.29.0
-sklearn  # for mlflow.sklearn.log_model
-joblib
+sklearn
+numpy
 # TODO: when the package 'mlflow_toolkit' is published, add dependency here

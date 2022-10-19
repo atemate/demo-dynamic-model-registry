@@ -3,41 +3,32 @@ import logging
 from pathlib import Path
 
 import mlflow
+import mlflow.sklearn
+import numpy as np
+import sklearn.datasets
+from sklearn.linear_model import ElasticNet
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
 
-from .utils import dump_mlflow_info, get_or_create_mlflow_experiment_id, sigmoid
+from .utils import dump_mlflow_info, get_or_create_mlflow_experiment_id
 
 log = logging.getLogger()
 
 
-class MockModel:
-    def __init__(self, learning_rate: float, max_depth: int, n_estimators: int):
-        self.learning_rate = learning_rate
-        self.max_depth = max_depth
-        self.n_estimators = n_estimators
-        # Log parameters
-        mlflow.log_param("learning_rate", self.learning_rate)
-        mlflow.log_param("max_depth", self.max_depth)
-        mlflow.log_param("n_estimators", self.n_estimators)
+def eval_metrics(actual, pred):
+    rmse = np.sqrt(mean_squared_error(actual, pred))
+    mae = mean_absolute_error(actual, pred)
+    r2 = r2_score(actual, pred)
+    return rmse, mae, r2
 
-    def fit(self, *args, **kwargs):
-        # assign random values to metrics
-        roc_auc = sigmoid(
-            sigmoid(self.learning_rate * self.max_depth * self.n_estimators)
-        )
-        precision = sigmoid(roc_auc)
-        accuracy = sigmoid(precision)
-        f1 = sigmoid(accuracy)
 
-        # Log metrics
-        mlflow.log_metric("roc_auc", roc_auc)
-        mlflow.log_metric("precision", precision)
-        mlflow.log_metric("accuracy", accuracy)
-        mlflow.log_metric("f1", f1)
-
-    def predict(self, *args, **kwargs):
-        # return mock value
-        mock_value = self.learning_rate * self.max_depth * self.n_estimators
-        return sigmoid(1 - sigmoid(mock_value))
+def load_data(train_size: float = 0.75, seed: int = 42):
+    wine = sklearn.datasets.load_wine()
+    X, y = wine.data, wine.target
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, train_size=train_size, stratify=y, random_state=seed
+    )
+    return X_train, X_test, y_train, y_test
 
 
 def train(
@@ -45,24 +36,41 @@ def train(
     experiment_name: str,
     run_name: str = None,
     model_name: str,
-    model_params: dict,
+    alpha: float,
+    l1_ratio: float,
+    data_train_size: float,
+    seed: int = 42,
     output_mlflow_json_file: Path = None,
 ):
+    mlflow.sklearn.autolog()
+
     experiment_id = get_or_create_mlflow_experiment_id(
         experiment_name, use_legacy_api=True
     )
 
-    with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
-        log.info(f"Experiment started: {experiment_id}")
-        # train the model ...
-        log.info(f"Training model with params: {model_params}")
-        model = MockModel(**model_params)
-        model.fit()
+    X_train, X_test, y_train, y_test = load_data(train_size=data_train_size, seed=seed)
 
-        # Log model
-        mlflow.sklearn.log_model(
-            model, artifact_path="model", registered_model_name=model_name
-        )
+    with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
+
+        lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
+        lr.fit(X_train, y_train)
+
+        predicted_qualities = lr.predict(X_test)
+        (rmse, mae, r2) = eval_metrics(y_test, predicted_qualities)
+
+        log.info("Elasticnet model (alpha=%f, l1_ratio=%f):" % (alpha, l1_ratio))
+        log.info("  RMSE: %s" % rmse)
+        log.info("  MAE: %s" % mae)
+        log.info("  R2: %s" % r2)
+
+        mlflow.log_param("alpha", alpha)
+        mlflow.log_param("l1_ratio", l1_ratio)
+        mlflow.log_param("data_train_size", data_train_size)
+        mlflow.log_metric("rmse", rmse)
+        mlflow.log_metric("r2", r2)
+        mlflow.log_metric("mae", mae)
+
+        mlflow.sklearn.log_model(lr, "model", registered_model_name=model_name)
 
         # Log mlflow run info
         dump_mlflow_info(output_mlflow_json_file, experiment_name, run, run_name)
@@ -70,12 +78,17 @@ def train(
 
 def get_args():
     parser = argparse.ArgumentParser()
+    # mlflow params:
     parser.add_argument("-e", "--experiment_name", required=True)
     parser.add_argument("-r", "--run_name")
     parser.add_argument("-m", "--model_name", required=True)
-    parser.add_argument("--learning_rate", type=float, default=0.01)
-    parser.add_argument("--max_depth", type=int, default=5)
-    parser.add_argument("--n_estimators", type=int, default=10)
+    # model params:
+    parser.add_argument("--alpha", type=float, default=0.5)
+    parser.add_argument("--l1_ratio", type=float, default=0.5)
+    # data params:
+    parser.add_argument("--data_train_size", type=float, default=0.75)
+    # system params:
+    parser.add_argument("--seed", default=42)
     parser.add_argument("--output_mlflow_json_file", type=Path)
     return parser.parse_args()
 
@@ -83,17 +96,16 @@ def get_args():
 def main(args=None):
     args = args or get_args()
     log.info(f"Arguments: {args}")
+    np.random.seed(args.seed)
 
-    model_params = dict(
-        learning_rate=args.learning_rate,
-        max_depth=args.max_depth,
-        n_estimators=args.n_estimators,
-    )
     train(
         experiment_name=args.experiment_name,
         run_name=args.run_name,
         model_name=args.model_name,
-        model_params=model_params,
+        alpha=args.alpha,
+        l1_ratio=args.l1_ratio,
+        data_train_size=args.data_train_size,
+        seed=args.seed,
         output_mlflow_json_file=args.output_mlflow_json_file,
     )
 

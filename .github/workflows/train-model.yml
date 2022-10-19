@@ -44,8 +44,9 @@ jobs:
       - name: Set fallback variables
         run: |
           if [[ $GITHUB_EVENT_NAME == "pull_request" ]]; then
+            branch=${{ github.head_ref }}
             pr_number=$(jq -r .pull_request.number "$GITHUB_EVENT_PATH")
-            experiment_prefix=${experiment_prefix:-"pr${pr_number}-$(date +%Y%m%d-%H%M%S)"}
+            experiment_prefix=${experiment_prefix:-"pr${pr_number}-${branch}"}
 
           elif [[ $GITHUB_EVENT_NAME == "push" ]]; then
             experiment_prefix=${experiment_prefix:-"main"}
@@ -72,9 +73,9 @@ jobs:
       - name: Train model
         run: |
           python -m model.train \
-            --experiment_name=${experiment_prefix}-train \
+            --experiment_name=${experiment_prefix}/train \
             --run_name="train-run" \
-            --model_name="my-model" \
+            --model_name="wine-classifier" \
             --learning_rate=${learning_rate} \
             --max_depth=${max_depth} \
             --n_estimators=${n_estimators} \
@@ -92,7 +93,7 @@ jobs:
           model_version=$( cat model_info.json | jq -r '.version')
 
           python -m model.evaluate \
-            --experiment_name=${experiment_prefix}-eval-v${model_version} \
+            --experiment_name=${experiment_prefix}/eval/v${model_version} \
             --run_id=${run_id} \
             --output_mlflow_json_file=mlflow_eval.json
 
